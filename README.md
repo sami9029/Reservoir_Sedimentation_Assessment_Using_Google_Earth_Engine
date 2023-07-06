@@ -1,2 +1,2 @@
-# Application-of-Google-Earth-Engine-For-Reservoir-Sedimentation-Assessment
+# Application_of_Google_Earth_Engine_For_Reservoir_Sedimentation_Assessment
 GEE (java script API)  
