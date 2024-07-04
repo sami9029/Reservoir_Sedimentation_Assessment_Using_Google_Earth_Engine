@@ -1,0 +1,107 @@
+////////////Google Earth Engine///////////////////////////////////////
+/////////// JAVASCRIPT CODE DEVELOPED ////////////////////////////////
+////////// Reservoir Sedimentation Assessment Using Google Earth Engine(GEE): The case of Two Reservoirs in the Upper Awash River Basin, Ethiopia /////////////////////////////////////
+////////// Samuel N. Bekele1, Mulugeta Musie2, Megersa O. Dinka3 /////////////////////////////////////////////////////////
+/
+/////////  the shapefile geometry of the reservoirs must be provided and renamed as AOI////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////Image acquisition and pre-processing///////////////////////////////////////////////////////////////////////////////
+// The first stage of the methodology is to import and preprocess satellite images. 
+// Therefore, satellite images from the Landsat 8 OLI were imported.   
+// Import landsat 8 OLI image 
+var dataset = ee.ImageCollection("LANDSAT/LC08/C02/T1_TOA");
+// Set visualization parmeter, which is used to transform numbers into RGB colors for display.
+var visualization = {
+  bands: [ 'B3', 'B2', 'B1'],
+  min: 0.0,
+  max: 0.3,
+};
+Map.centerObject(reservoir, 10)
+Map.addLayer(trueColor432, trueColor432Vis, 'True Color (432)');
+// It is recommended to mask the clouds and cloud shadow using the “QA _PIXEL” band by encoding the correct cloud mask functions.
+// This function masks clouds, cloud shadows, and bad pixels in Landsat TOA imagery.
+var maskL85 = function(image) {
+  // This line calculates a bitmask value for cloud shadows.
+  var cloudShadowBitMask = ee.Number(2).pow(3).int();
+  // This line calculates a bitmask value for clouds.
+  var cloudsBitMask = ee.Number(2).pow(5).int();
+  //This line selects the 'QA_PIXEL' band from the imported image.
+  var qa = image.select('QA_PIXEL');
+  var mask = qa.bitwiseAnd(cloudShadowBitMask).eq(0)
+      .and(qa.bitwiseAnd(cloudsBitMask).eq(0))
+      .and(qa.bitwiseAnd(ee.Number(2).pow(0).int()).not());
+  return image.updateMask(mask);
+};
+
+//To calculate the water spread area it is essential to obtain high-quality images.
+// Therefore, the next step will be filtering images by metadata, by date, and by location. 
+// This line filters the dataset to only include images that fall within the specified date range, defined by the 'start_date' and 'end_date' 
+var filtered_image = dataset.filter(ee.Filter.date('start_date', 'end_date'))
+                     // This line further filters the dataset to only include images that intersect the specified Area of Interest (AOI)
+                    .filter(ee.Filter.bounds(AOI))
+                     // This line filters the dataset to only include images with less than 10% cloud cover.
+                    .filter(ee.Filter.lt('CLOUD_COVER', 10))
+                     // This line applies the maskL8sr function to each image in the filtered dataset.
+                    .map(maskL8sr);
+// This line prints the size of available filtered images 
+print('available filtered images ' ,filtered_image.size());
+// This line prints the property of available filtered images 
+print(filtered_image)
+// This line merges spatially overlapping images into a single image and clipp the reservoir area.
+var Clipped_image = filtered_image.median().clip(AOI);
+// This line adds the clipped image to layer to visualize
+Map.addLayer(Clipped_image, visualization, 'Clipped_image');
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////Calculation of the water index///////////////////////////////////////////////////////////////////////////////
+
+// The next step is to map and calculate the reservoir water spread area by using MNDWI. 
+// This is a  function to calculate MNDWI.
+// This function takes two parameters: clipped image and name of the image.
+var calculate_mndwi = function (image, name){
+  // It calculates the NDWI by taking the normalized difference between the green (B3) and shortwave infrared (B6) bands
+  var mndwi = image.normalizedDifference(['B3','B6']).rename(['mndwi']);
+  // This line sets the trishold greater than zero. 
+  var threshold = mndwi.gt(0)
+  image = image.addBands(mndwi)
+  Map.centerObject(AOI, 10)
+  // This line adds a MNDWI map to a layer, with the specified visparam visualization parameters and the name label.
+  Map.addLayer(threshold, visparam, name)
+  // Once the MNDWI generated its possible to calculate the water spread area. 
+  // This function calculates the area of the water pixels by multiplying with the pixel area 
+  var area_img = threshold.multiply(ee.Image.pixelArea())
+  var reduce = area_img.reduceRegion({
+    reducer: ee.Reducer.sum(),
+    geometry: AOI ,
+    scale: 10,
+    maxPixels: 1e10
+  })
+  // This line adds area of water pixel as a band.
+  image = image.addBands(area_img);
+  // This line converts the area from square meter to square kilometers
+  var SqKm = ee.Number(reduce.get('mndwi')).divide(1e6).round();
+ // This line prints the water spread area in square kilometers.
+  print ('area of water pixels at ',   name ,  SqKm);
+};
+
+// Thsi visualization parameter defines the color palette to be used when displaying MNDWI map. 
+var visparam = {
+  min: 0,
+  max: 1,
+  palette: ['white', 'blue']
+};
+
+// Thsi line calls the MNDWI function to map and calculate the reservoir water spread area for the input image.
+var mndwi_of_clipped_image = calculate_ndwi(Clipped_image, 'MNDWI Map'); 
+// This function exports the MNDWI  image and exports it to the users Google Drive.
+Export.image.toDrive({
+  image: mndwi_of_clipped_image,
+  description: 'MNDWI Map',
+  folder: '____',
+  region: AOI,
+  scale: 10,
+  maxPixels: 1e10}) ;
+
+Print ('The End')
