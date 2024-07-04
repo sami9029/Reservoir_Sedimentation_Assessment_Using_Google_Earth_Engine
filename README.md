@@ -1,2 +1,5 @@
-# Reservoir_Sedimentation_Assessment_Using_Google_Earth_Engine
+# Reservoir_Sedimentation_Assessment_Using_Google_Earth_Engine: The_case_of_two_reservoirs_in_Upper_Awash_River_Basin, Ethiopia
 GEE (java script API)  
+This script is a portion of our study, which utilized Google Earth Engine, a cloud-based platform, as a remote sensing tool to assess reservoir sedimentation. We developed an automated methodology using the JavaScript API found in GEE, which enables the acquisition and processing of satellite imagery. 
+It will have important implications for the active management of reservoir sedimentation, especially in developing countries where resources are often limited.Therefore, its uploaded to facilitate future sedimentation studies at various reservoirs.  This will make it easier to conduct future sedimentation studies for scientists, policymakers, NGOs, field workers, and even the general public. 
+This script is intended to acquire and process Landsat images, as well as automatically compute and map the water spread area of a reservoir. It comprises detail instructions and descriptions of the codes. 
