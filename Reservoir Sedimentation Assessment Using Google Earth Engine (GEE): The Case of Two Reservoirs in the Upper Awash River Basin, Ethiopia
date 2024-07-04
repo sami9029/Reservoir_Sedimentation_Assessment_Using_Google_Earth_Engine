@@ -17,8 +17,8 @@ var visualization = {
   min: 0.0,
   max: 0.3,
 };
-Map.centerObject(reservoir, 10)
-Map.addLayer(trueColor432, trueColor432Vis, 'True Color (432)');
+Map.centerObject(AOI, 10)
+Map.addLayer(dataset, visualization, 'True Color (432)');
 // It is recommended to mask the clouds and cloud shadow using the “QA _PIXEL” band by encoding the correct cloud mask functions.
 // This function masks clouds, cloud shadows, and bad pixels in Landsat TOA imagery.
 var maskL85 = function(image) {
@@ -58,12 +58,12 @@ Map.addLayer(Clipped_image, visualization, 'Clipped_image');
 ///////////////////////////Calculation of the water index///////////////////////////////////////////////////////////////////////////////
 
 // The next step is to map and calculate the reservoir water spread area by using MNDWI. 
-// This is a  function to calculate MNDWI.
+// This is MNDWI  function.
 // This function takes two parameters: clipped image and name of the image.
 var calculate_mndwi = function (image, name){
-  // It calculates the NDWI by taking the normalized difference between the green (B3) and shortwave infrared (B6) bands
+  // It calculates the MNDWI by taking the normalized difference between the green (B3) and shortwave infrared (B6) bands
   var mndwi = image.normalizedDifference(['B3','B6']).rename(['mndwi']);
-  // This line sets the trishold greater than zero. 
+  // This line sets the threshold greater than zero. 
   var threshold = mndwi.gt(0)
   image = image.addBands(mndwi)
   Map.centerObject(AOI, 10)
@@ -86,14 +86,14 @@ var calculate_mndwi = function (image, name){
   print ('area of water pixels at ',   name ,  SqKm);
 };
 
-// Thsi visualization parameter defines the color palette to be used when displaying MNDWI map. 
+// This visualization parameter defines the color palette to be used when displaying MNDWI map. 
 var visparam = {
   min: 0,
   max: 1,
   palette: ['white', 'blue']
 };
 
-// Thsi line calls the MNDWI function to map and calculate the reservoir water spread area for the input image.
+// This line calls the MNDWI function to map and calculate the reservoir water spread area for the input image.
 var mndwi_of_clipped_image = calculate_ndwi(Clipped_image, 'MNDWI Map'); 
 // This function exports the MNDWI  image and exports it to the users Google Drive.
 Export.image.toDrive({
